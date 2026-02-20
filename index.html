@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Hybrid-Gym: Training Coding Agents to Generalize Across Tasks">
+  <meta name="description" content="Hybrid-Gym proposes scalable synthetic training tasks for coding agents that generalize across diverse real-world tasks, achieving 25.4% gain on SWE-Bench Verified.">
+  <meta name="keywords" content="coding agent, coding agent training, synthetic data, SWE-Bench, software engineering, LLM agents">
+  <meta name="author" content="Yiqing Xie, Emmy Liu, Gaokai Zhang, Nachiket Kotalwar, Shubham Gandhi, Sathwik Acharya, Xingyao Wang, Carolyn Rose, Graham Neubig, Daniel Fried">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Carnegie Mellon University">
+  <meta property="og:title" content="Hybrid-Gym: Training Coding Agents to Generalize Across Tasks">
+  <meta property="og:description" content="Hybrid-Gym proposes scalable synthetic training tasks for coding agents that generalize across diverse real-world tasks.">
+  <meta property="og:url" content="https://hybrid-gym.github.io">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hybrid-Gym: Training Coding Agents to Generalize Across Tasks">
+  <meta name="twitter:description" content="Hybrid-Gym proposes scalable synthetic training tasks for coding agents that generalize across diverse real-world tasks.">
+
+  <!-- Academic/Research Specific -->
+  <meta name="citation_title" content="Hybrid-Gym: Training Coding Agents to Generalize Across Tasks">
+  <meta name="citation_author" content="Xie, Yiqing">
+  <meta name="citation_author" content="Liu, Emmy">
+  <meta name="citation_author" content="Zhang, Gaokai">
+  <meta name="citation_author" content="Kotalwar, Nachiket">
+  <meta name="citation_author" content="Gandhi, Shubham">
+  <meta name="citation_author" content="Acharya, Sathwik">
+  <meta name="citation_author" content="Wang, Xingyao">
+  <meta name="citation_author" content="Rose, Carolyn">
+  <meta name="citation_author" content="Neubig, Graham">
+  <meta name="citation_author" content="Fried, Daniel">
+  <meta name="citation_publication_date" content="2026">
+
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://ajax.googleapis.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+  <title>Hybrid-Gym: Training Coding Agents to Generalize Across Tasks</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+
+  <!-- Critical CSS -->
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <!-- Non-critical CSS -->
+  <link rel="preload" href="static/css/bulma-carousel.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/bulma-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/fontawesome.all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <noscript>
+    <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  </noscript>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- JavaScript -->
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/bulma-carousel.min.js"></script>
+  <script defer src="static/js/bulma-slider.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+
+  <style>
+    /* Custom styles for tables and prompts */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 1.5rem 0;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .results-table th {
+      background: #1e293b;
+      color: white;
+      padding: 10px 12px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .results-table td {
+      padding: 8px 12px;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.82rem;
+    }
+    .results-table tr:hover {
+      background: #f8fafc;
+    }
+    .results-table .highlight-row {
+      background: #eff6ff;
+      font-weight: 600;
+    }
+    .results-table .highlight-row:hover {
+      background: #dbeafe;
+    }
+    .results-table .base-row {
+      background: #f1f5f9;
+    }
+    .results-table .section-header {
+      background: #f8fafc;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 12px;
+      color: #1e293b;
+    }
+    .results-table td:first-child {
+      text-align: left;
+      font-weight: 500;
+    }
+    .gain {
+      color: #16a34a;
+      font-size: 0.75rem;
+    }
+    .loss {
+      color: #dc2626;
+      font-size: 0.75rem;
+    }
+    .prompt-box {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .prompt-box .placeholder {
+      color: #60a5fa;
+    }
+    .prompt-box .step {
+      color: #34d399;
+      font-weight: 600;
+    }
+    .section-subtitle {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 2rem 0 1rem;
+    }
+    .table-caption {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-style: italic;
+      text-align: center;
+    }
+    .figure-container {
+      text-align: center;
+      margin: 2rem 0;
+    }
+    .figure-container img {
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .figure-caption {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 0.75rem;
+      text-align: center;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+    }
+    .task-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .task-card h4 {
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    .task-card p {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 0;
+    }
+    .key-result {
+      display: inline-block;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border: 1px solid #93c5fd;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      font-weight: 600;
+      color: #1e40af;
+      font-size: 0.9rem;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    @media screen and (max-width: 768px) {
+      .results-table {
+        font-size: 0.7rem;
+      }
+      .results-table th, .results-table td {
+        padding: 6px 8px;
+      }
+    }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    "headline": "Hybrid-Gym: Training Coding Agents to Generalize Across Tasks",
+    "description": "We propose Hybrid-Gym, a training environment of scalable synthetic tasks for coding agents that generalize across diverse real-world tasks.",
+    "author": [
+      {"@type": "Person", "name": "Yiqing Xie", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Emmy Liu", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Gaokai Zhang", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Nachiket Kotalwar", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Shubham Gandhi", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Sathwik Acharya", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Xingyao Wang", "affiliation": {"@type": "Organization", "name": "All Hands AI"}},
+      {"@type": "Person", "name": "Carolyn Rose", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Graham Neubig", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}},
+      {"@type": "Person", "name": "Daniel Fried", "affiliation": {"@type": "Organization", "name": "Carnegie Mellon University"}}
+    ],
+    "datePublished": "2026",
+    "publisher": {"@type": "Organization", "name": "Preprint"},
+    "url": "https://hybrid-gym.github.io",
+    "isAccessibleForFree": true
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Scroll to Top Button -->
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <main id="main-content">
+
+  <!-- Title Section -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">&#x1F3A8; Hybrid-Gym: Training Coding Agents to Generalize Across Tasks</h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><a href="https://yiqingxyq.github.io/" target="_blank">Yiqing Xie</a><sup>1</sup>,</span>
+              <span class="author-block"><a href="https://emmy-liu.github.io/" target="_blank">Emmy Liu</a><sup>1</sup>,</span>
+              <span class="author-block"><a href="https://gaokaizhang.github.io/" target="_blank">Gaokai Zhang</a><sup>1</sup>,</span>
+              <span class="author-block">Nachiket Kotalwar<sup>1</sup>,</span>
+              <span class="author-block">Shubham Gandhi<sup>1</sup>,</span>
+              <span class="author-block">Sathwik Acharya<sup>1</sup>,</span>
+              <span class="author-block"><a href="https://xingyaoww.github.io/" target="_blank">Xingyao Wang</a><sup>2</sup>,</span>
+              <span class="author-block"><a href="https://www.cs.cmu.edu/~cprose/" target="_blank">Carolyn Ros&eacute;</a><sup>1</sup>,</span>
+              <span class="author-block"><a href="https://www.phontron.com/" target="_blank">Graham Neubig</a><sup>1,2</sup>,</span>
+              <span class="author-block"><a href="https://dpfried.github.io/" target="_blank">Daniel Fried</a><sup>1</sup></span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>Carnegie Mellon University &nbsp; <sup>2</sup>All Hands AI</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/2602.16819v1" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+
+                <span class="link-block">
+                  <a href="https://github.com/yiqingxyq/Hybrid-Gym" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                </a>
+              </span>
+
+                <span class="link-block">
+                  <a href="https://huggingface.co/hybrid-gym" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fas fa-smile"></i>
+                  </span>
+                  <span>Models</span>
+                </a>
+              </span>
+
+                <span class="link-block">
+                  <a href="https://hybrid-gym.github.io" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fas fa-globe"></i>
+                  </span>
+                  <span>Webpage</span>
+                </a>
+              </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Abstract -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              When assessing the quality of coding agents, predominant benchmarks focus on solving single issues on GitHub, such as SWE-Bench. In contrast, in real use these agents solve more various and complex tasks that involve other skills such as exploring codebases, testing software, and designing architecture. In this paper, we first characterize some transferable skills that are shared across diverse tasks by decomposing trajectories into fine-grained components, and derive a set of principles for designing auxiliary training tasks to teach language models these skills. Guided by these principles, we propose a training environment, <strong>Hybrid-Gym</strong>, consisting of a set of scalable synthetic tasks, such as function localization and dependency search. Experiments show that agents trained on our synthetic tasks effectively generalize to diverse real-world tasks that are not present in training, improving a base model by <strong>25.4%</strong> absolute gain on SWE-Bench Verified, <strong>7.9%</strong> on SWT-Bench Verified, and <strong>5.1%</strong> on Commit-0 Lite. Hybrid-Gym also complements datasets built for the downstream tasks (e.g., improving SWE-Play by <strong>4.9%</strong> on SWT-Bench Verified).
+            </p>
+          </div>
+          <div class="has-text-centered" style="margin-top: 1.5rem;">
+            <span class="key-result">+25.4% SWE-Bench Verified</span>
+            <span class="key-result">+7.9% SWT-Bench Verified</span>
+            <span class="key-result">+5.1% Commit-0 Lite</span>
+          </div>
+          <div style="margin-top: 1.5rem; border: 2px solid #2563eb; border-radius: 10px; padding: 0.75rem 1.25rem; background: #f0f5ff; text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <span style="font-weight: 700; color: #1e293b;">Fully cross-task generalization</span><br>
+            <span style="color: #475569; font-size: 0.95rem;">NO issue-solving, test-generation, or library-construction training data</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Overview Figure -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Overview</h2>
+          <div class="figure-container">
+            <img src="static/images/intro.png" alt="Hybrid-Gym Overview: decomposition of coding agent tasks into intermediate components and performance comparison">
+          </div>
+          <p class="figure-caption">
+            <strong>Left:</strong> Decomposition of coding agent tasks into intermediate components showing percentage of actions spent on each. Hybrid-Gym's training tasks cover reasoning, repository exploration, and implementation (~68% of actions).
+            <strong>Right:</strong> Compared to baseline (SWE-Gym), training with Hybrid-Gym significantly reduces failures due to insufficient reasoning, insufficient exploration, and failed file editing, improving resolved rate on SWE-Bench Verified from 20.6% to 32.4%.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hybrid-Gym Tasks -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Hybrid-Gym Training Tasks</h2>
+      <div class="content">
+        <p style="text-align: center; color: #64748b; max-width: 700px; margin: 0 auto 2rem;">
+          Hybrid-Gym consists of four scalable synthetic tasks designed to teach transferable coding skills without requiring executable repository setup.
+        </p>
+
+        <div class="columns is-multiline">
+          <div class="column is-6">
+            <div class="task-card">
+              <h4>Function Localization</h4>
+              <p>Given a description of a function, locate it in the repository and write its docstring. Requires codebase exploration and code understanding.</p>
+            </div>
+          </div>
+          <div class="column is-6">
+            <div class="task-card">
+              <h4>Issue Localization</h4>
+              <p>Given an issue description, localize the specific files, classes, functions, and lines of code that need modification to resolve it.</p>
+            </div>
+          </div>
+          <div class="column is-6">
+            <div class="task-card">
+              <h4>Dependency Search</h4>
+              <p>Analyze a function and find all modules directly called by it within the repository, then annotate each dependency's definition.</p>
+            </div>
+          </div>
+          <div class="column is-6">
+            <div class="task-card">
+              <h4>Function Generation</h4>
+              <p>Given a function signature and docstring, implement the function body by understanding surrounding code context and patterns.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dataset Statistics -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Dataset Statistics</h2>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Dataset</th>
+              <th># Trajectories</th>
+              <th># Repos</th>
+              <th>Avg Steps</th>
+              <th># Docker Images</th>
+              <th>Cost / Instance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SWE-Gym</td>
+              <td>491</td>
+              <td>11</td>
+              <td>40.2</td>
+              <td>2.4k</td>
+              <td>unknown</td>
+            </tr>
+            <tr>
+              <td>R2E-Gym</td>
+              <td>3,321</td>
+              <td>10</td>
+              <td>33.2</td>
+              <td>4.5k</td>
+              <td>unknown</td>
+            </tr>
+            <tr>
+              <td>SWE-Smith</td>
+              <td>5,016</td>
+              <td>128</td>
+              <td>26.7</td>
+              <td>128</td>
+              <td>2.32&cent;</td>
+            </tr>
+            <tr>
+              <td>SWE-Play</td>
+              <td>704</td>
+              <td>28</td>
+              <td>72.9</td>
+              <td>28</td>
+              <td>unknown</td>
+            </tr>
+            <tr class="highlight-row" style="border-top: 2px solid #2563eb;">
+              <td><strong>Hybrid-Gym</strong></td>
+              <td><strong>4,470</strong></td>
+              <td><strong>762</strong></td>
+              <td><strong>39.1</strong></td>
+              <td><strong>2</strong></td>
+              <td><strong>0.07&cent;</strong></td>
+            </tr>
+            <tr style="color: #64748b; font-size: 0.8rem;">
+              <td>&mdash; Func-Localize</td>
+              <td>1,438</td>
+              <td>226</td>
+              <td>29.0</td>
+              <td>1</td>
+              <td>0.02&cent;</td>
+            </tr>
+            <tr style="color: #64748b; font-size: 0.8rem;">
+              <td>&mdash; Issue-Localize</td>
+              <td>1,978</td>
+              <td>263</td>
+              <td>52.4</td>
+              <td>1</td>
+              <td>0.00&cent;</td>
+            </tr>
+            <tr style="color: #64748b; font-size: 0.8rem;">
+              <td>&mdash; Dep-Search</td>
+              <td>502</td>
+              <td>120</td>
+              <td>26.9</td>
+              <td>1</td>
+              <td>0.00&cent;</td>
+            </tr>
+            <tr style="color: #64748b; font-size: 0.8rem;">
+              <td>&mdash; Func-Gen</td>
+              <td>552</td>
+              <td>306</td>
+              <td>28.6</td>
+              <td>1</td>
+              <td>0.56&cent;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-caption">Compared to existing datasets, Hybrid-Gym covers significantly more repositories (762 vs. &le;128) and requires only 2 Docker images, with per-instance cost 16&times; lower than SWE-Smith.</p>
+    </div>
+  </section>
+
+  <!-- Main Results -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Main Results</h2>
+      <p style="text-align: center; color: #64748b; margin-bottom: 1.5rem;">Results on three real-world coding tasks. Hybrid-Gym achieves strong cross-task generalization without training on downstream tasks.</p>
+
+      <!-- 32B Results -->
+      <h3 class="section-subtitle has-text-centered">Qwen2.5Coder-32B</h3>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align: middle;">Training Dataset</th>
+              <th colspan="3">SWE-Bench Verified</th>
+              <th rowspan="2" style="vertical-align: middle;">SWT-Bench Lite</th>
+              <th rowspan="2" style="vertical-align: middle;">SWT-Bench Verified</th>
+              <th rowspan="2" style="vertical-align: middle;">Commit-0 Lite</th>
+            </tr>
+            <tr>
+              <th>Resolved %</th>
+              <th>Localized %</th>
+              <th>Non-Loop %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="base-row">
+              <td>Base Model</td>
+              <td>7.0</td>
+              <td>45.6</td>
+              <td>70.6</td>
+              <td>9.42</td>
+              <td>9.01</td>
+              <td>8.34</td>
+            </tr>
+            <tr>
+              <td>SWE-Gym</td>
+              <td>20.6 <span class="gain">(+13.6)</span></td>
+              <td>57.8 <span class="gain">(+12.2)</span></td>
+              <td>76.2 <span class="gain">(+5.6)</span></td>
+              <td>3.26 <span class="loss">(-6.16)</span></td>
+              <td>2.77 <span class="loss">(-6.24)</span></td>
+              <td>9.58 <span class="gain">(+1.24)</span></td>
+            </tr>
+            <tr>
+              <td>R2E-Gym</td>
+              <td>34.4 <span class="gain">(+27.4)</span></td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>3.26 <span class="loss">(-6.16)</span></td>
+              <td>4.39 <span class="loss">(-4.62)</span></td>
+              <td>11.56 <span class="gain">(+3.22)</span></td>
+            </tr>
+            <tr>
+              <td>SWE-Smith</td>
+              <td>40.2 <span class="gain">(+33.2)</span></td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>13.77 <span class="gain">(+4.35)</span></td>
+              <td>10.62 <span class="gain">(+1.61)</span></td>
+              <td>12.38 <span class="gain">(+4.04)</span></td>
+            </tr>
+            <tr>
+              <td>SWE-Play</td>
+              <td>31.2 <span class="gain">(+24.2)</span></td>
+              <td>73.4 <span class="gain">(+27.8)</span></td>
+              <td>85.2 <span class="gain">(+14.6)</span></td>
+              <td>18.12 <span class="gain">(+8.70)</span></td>
+              <td>16.17 <span class="gain">(+7.16)</span></td>
+              <td>13.95 <span class="gain">(+5.61)</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Hybrid-Gym</strong></td>
+              <td><strong>32.4</strong> <span class="gain">(+25.4)</span></td>
+              <td><strong>75.4</strong> <span class="gain">(+29.8)</span></td>
+              <td><strong>98.2</strong> <span class="gain">(+27.6)</span></td>
+              <td><strong>17.03</strong> <span class="gain">(+7.61)</span></td>
+              <td><strong>16.86</strong> <span class="gain">(+7.85)</span></td>
+              <td><strong>13.45</strong> <span class="gain">(+5.11)</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Hybrid-Gym + SWE-Play</strong></td>
+              <td><strong>33.6</strong> <span class="gain">(+26.6)</span></td>
+              <td><strong>75.2</strong> <span class="gain">(+29.6)</span></td>
+              <td><strong>99.2</strong> <span class="gain">(+28.6)</span></td>
+              <td><strong>20.29</strong> <span class="gain">(+10.87)</span></td>
+              <td><strong>21.02</strong> <span class="gain">(+12.01)</span></td>
+              <td><strong>15.52</strong> <span class="gain">(+7.18)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 7B Results -->
+      <h3 class="section-subtitle has-text-centered" style="margin-top: 2.5rem;">Qwen2.5Coder-7B</h3>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align: middle;">Training Dataset</th>
+              <th colspan="3">SWE-Bench Verified</th>
+              <th rowspan="2" style="vertical-align: middle;">SWT-Bench Lite</th>
+              <th rowspan="2" style="vertical-align: middle;">SWT-Bench Verified</th>
+              <th rowspan="2" style="vertical-align: middle;">Commit-0 Lite</th>
+            </tr>
+            <tr>
+              <th>Resolved %</th>
+              <th>Localized %</th>
+              <th>Non-Loop %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="base-row">
+              <td>Base Model</td>
+              <td>1.8</td>
+              <td>4.4</td>
+              <td>60.4</td>
+              <td>0.72</td>
+              <td>0.23</td>
+              <td>4.80</td>
+            </tr>
+            <tr>
+              <td>SWE-Play-general</td>
+              <td>8.6 <span class="gain">(+6.8)</span></td>
+              <td>49.2 <span class="gain">(+44.8)</span></td>
+              <td>93.4 <span class="gain">(+33.0)</span></td>
+              <td>2.54 <span class="gain">(+1.82)</span></td>
+              <td>1.62 <span class="gain">(+1.39)</span></td>
+              <td>9.25 <span class="gain">(+4.45)</span></td>
+            </tr>
+            <tr>
+              <td>SWE-Gym</td>
+              <td>10.6 <span class="gain">(+8.8)</span></td>
+              <td>48.2 <span class="gain">(+43.8)</span></td>
+              <td>79.0 <span class="gain">(+18.6)</span></td>
+              <td>1.45 <span class="gain">(+0.73)</span></td>
+              <td>0.69 <span class="gain">(+0.46)</span></td>
+              <td>8.61 <span class="gain">(+3.81)</span></td>
+            </tr>
+            <tr>
+              <td>R2E-Gym</td>
+              <td>19.0 <span class="gain">(+17.2)</span></td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>0.72 <span class="gain">(+0.00)</span></td>
+              <td>0.46 <span class="gain">(+0.23)</span></td>
+              <td>9.25 <span class="gain">(+4.45)</span></td>
+            </tr>
+            <tr>
+              <td>SWE-Smith</td>
+              <td>15.2 <span class="gain">(+13.4)</span></td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>0.00 <span class="loss">(-0.72)</span></td>
+              <td>0.00 <span class="loss">(-0.23)</span></td>
+              <td>9.32 <span class="gain">(+4.52)</span></td>
+            </tr>
+            <tr>
+              <td>SWE-Play</td>
+              <td>17.0 <span class="gain">(+15.2)</span></td>
+              <td>60.4 <span class="gain">(+56.0)</span></td>
+              <td>91.2 <span class="gain">(+30.8)</span></td>
+              <td>3.26 <span class="gain">(+2.54)</span></td>
+              <td>3.00 <span class="gain">(+2.77)</span></td>
+              <td>10.42 <span class="gain">(+5.62)</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Hybrid-Gym</strong></td>
+              <td><strong>15.0</strong> <span class="gain">(+13.2)</span></td>
+              <td><strong>62.4</strong> <span class="gain">(+58.0)</span></td>
+              <td><strong>97.6</strong> <span class="gain">(+37.2)</span></td>
+              <td><strong>2.90</strong> <span class="gain">(+2.18)</span></td>
+              <td><strong>2.54</strong> <span class="gain">(+2.31)</span></td>
+              <td><strong>10.54</strong> <span class="gain">(+5.74)</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Hybrid-Gym + SWE-Play</strong></td>
+              <td><strong>17.6</strong> <span class="gain">(+15.8)</span></td>
+              <td><strong>58.6</strong> <span class="gain">(+54.2)</span></td>
+              <td><strong>97.2</strong> <span class="gain">(+36.8)</span></td>
+              <td><strong>5.07</strong> <span class="gain">(+4.35)</span></td>
+              <td><strong>4.39</strong> <span class="gain">(+4.16)</span></td>
+              <td><strong>11.02</strong> <span class="gain">(+6.22)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Individual Task Performance -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Individual Task Analysis</h2>
+      <p style="text-align: center; color: #64748b; margin-bottom: 1.5rem;">Performance of training Qwen2.5Coder-7B on each Hybrid-Gym task individually. Function localization alone achieves larger gains than SWE-Gym (491 instances) on multiple benchmarks.</p>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Training Tasks (# Instances)</th>
+              <th>SWE-Bench Verified (%)</th>
+              <th>SWT-Bench Verified (%)</th>
+              <th>Commit-0 Lite (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="base-row">
+              <td>Qwen2.5Coder-7B (Base)</td>
+              <td>1.8</td>
+              <td>0.23</td>
+              <td>4.80</td>
+            </tr>
+            <tr>
+              <td>+ Issue-Solving (491)</td>
+              <td>10.6 <span class="gain">(+8.8)</span></td>
+              <td>0.69 <span class="gain">(+0.46)</span></td>
+              <td>8.61 <span class="gain">(+3.81)</span></td>
+            </tr>
+            <tr>
+              <td>+ Func-Localize (500)</td>
+              <td>12.8 <span class="gain">(+11.0)</span></td>
+              <td>3.00 <span class="gain">(+2.77)</span></td>
+              <td>8.74 <span class="gain">(+3.94)</span></td>
+            </tr>
+            <tr>
+              <td>+ Issue-Localize (500)</td>
+              <td>9.6 <span class="gain">(+7.8)</span></td>
+              <td>2.31 <span class="gain">(+2.08)</span></td>
+              <td>9.09 <span class="gain">(+4.29)</span></td>
+            </tr>
+            <tr>
+              <td>+ Dep-Search (500)</td>
+              <td>6.4 <span class="gain">(+4.6)</span></td>
+              <td>2.31 <span class="gain">(+2.08)</span></td>
+              <td>9.25 <span class="gain">(+4.45)</span></td>
+            </tr>
+            <tr>
+              <td>+ Func-Gen (500)</td>
+              <td>7.8 <span class="gain">(+6.0)</span></td>
+              <td>2.54 <span class="gain">(+2.31)</span></td>
+              <td>9.25 <span class="gain">(+4.45)</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Hybrid-Gym Full</strong></td>
+              <td><strong>15.0</strong> <span class="gain">(+13.2)</span></td>
+              <td><strong>2.54</strong> <span class="gain">(+2.31)</span></td>
+              <td><strong>10.54</strong> <span class="gain">(+5.74)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ablation Figures -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Analysis</h2>
+
+      <div class="figure-container">
+        <img src="static/images/fig_combined_bcde.png" alt="Controlled experiments on training data characteristics">
+      </div>
+      <p class="figure-caption">
+        <strong>Controlled experiments on training data characteristics.</strong>
+        (a) <em>Output Format:</em> Removing file editing actions from function localization trajectories causes large drop in SWE-bench resolution rate.
+        (b) <em>Repo-Exploration:</em> Script-level code generation does not effectively transfer to repo-level issue-solving.
+        (c) <em>Task Complexity:</em> Transfer improves as training tasks become more complex.
+        (d) <em>Trajectory Complexity:</em> Training on longer trajectories substantially improves downstream performance.
+      </p>
+
+      <div class="figure-container" style="margin-top: 3rem;">
+        <img src="static/images/fig_scaling_law_v2.png" alt="Scaling law analysis" style="max-width: 55%;">
+      </div>
+      <p class="figure-caption">
+        <strong>Scaling law analysis.</strong> Performance on SWE-bench Verified improves consistently as training data size increases from ~250 to 4.4k trajectories.
+      </p>
+
+      <div class="figure-container" style="margin-top: 3rem;">
+        <img src="static/images/fig_sampling_teacher_combined.png" alt="Effect of teacher model and data selection">
+      </div>
+      <p class="figure-caption">
+        <strong>Effect of teacher model and data selection.</strong>
+        (a) Repository diversity improves training but using same repositories as evaluation does not help.
+        (b) Teacher model selection matters: different teacher models produce trajectories of varying quality.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- BibTeX -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <div class="bibtex-header">
+        <h2 class="title">BibTeX</h2>
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
+          <i class="fas fa-copy"></i>
+          <span class="copy-text">Copy</span>
+        </button>
+      </div>
+      <pre id="bibtex-code"><code>@misc{xie2026hybridgymtrainingcodingagents,
+      title={Hybrid-Gym: Training Coding Agents to Generalize Across Tasks},
+      author={Yiqing Xie and Emmy Liu and Gaokai Zhang and Nachiket Kotalwar and Shubham Gandhi and Sathwik Acharya and Xingyao Wang and Carolyn Rose and Graham Neubig and Daniel Fried},
+      year={2026},
+      eprint={2602.16819},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2602.16819},
+}</code></pre>
+    </div>
+  </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+              You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
